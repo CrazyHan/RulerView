@@ -27,13 +27,13 @@ public class RulerFragment extends Fragment {
         mHeightView = (RulerView)view.findViewById(R.id.heightRulerView);
         mWeightView = (RulerView)view.findViewById(R.id.weightRulerView);
 
-        mBirthView.setmStartValue(0);
-        mBirthView.setmEndValue(10000);
-        mBirthView.setmOriginValue(2000);
+        mBirthView.setStartValue(0);
+        mBirthView.setEndValue(10000);
+        mBirthView.setOriginValue(2000);
         mBirthView.setOriginValueSmall(0);
-        mBirthView.setmPartitionWidthInDP(106.7f);
-        mBirthView.setmPartitionValue(1000);
-        mBirthView.setmSmallPartitionCount(1);
+        mBirthView.setPartitionWidthInDP(106.7f);
+        mBirthView.setPartitionValue(1000);
+        mBirthView.setSmallPartitionCount(1);
         mBirthView.setmValue(1990);
         mBirthView.setValueChangeListener(new RulerView.OnValueChangeListener() {
             @Override
@@ -42,11 +42,11 @@ public class RulerFragment extends Fragment {
             }
         });
 
-        mHeightView.setmStartValue(50);
-        mHeightView.setmEndValue(250);
-        mHeightView.setmPartitionWidthInDP(40);
-        mHeightView.setmPartitionValue(1);
-        mHeightView.setmSmallPartitionCount(1);
+        mHeightView.setStartValue(50);
+        mHeightView.setEndValue(250);
+        mHeightView.setPartitionWidthInDP(40);
+        mHeightView.setPartitionValue(1);
+        mHeightView.setSmallPartitionCount(1);
         mHeightView.setmValue(170);
         mHeightView.setValueChangeListener(new RulerView.OnValueChangeListener() {
             @Override
@@ -55,11 +55,11 @@ public class RulerFragment extends Fragment {
             }
         });
 
-        mWeightView.setmStartValue(20);
-        mWeightView.setmEndValue(250);
-        mWeightView.setmPartitionWidthInDP(36.7f);
-        mWeightView.setmPartitionValue(1);
-        mWeightView.setmSmallPartitionCount(2);
+        mWeightView.setStartValue(20);
+        mWeightView.setEndValue(250);
+        mWeightView.setPartitionWidthInDP(36.7f);
+        mWeightView.setPartitionValue(1);
+        mWeightView.setSmallPartitionCount(2);
         mWeightView.setmValue(106);
         mWeightView.setOriginValueSmall(1);
         mWeightView.setValueChangeListener(new RulerView.OnValueChangeListener() {

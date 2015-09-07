@@ -8,7 +8,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -18,7 +17,9 @@ import android.widget.Scroller;
 
 
 /**
- * TODO 效果有了，感觉还是有点不太好
+ * TODO
+ * 1. 配置属性添加到style.xml里面
+ * 2. 设置start和end value可以为小数
  * Created by ScorpioNeal on 15/8/24.
  */
 public class RulerView extends View {
@@ -59,7 +60,6 @@ public class RulerView extends View {
      * 短线长线的上边距
      */
     private float mLineTopMargin;
-
     /**
      * 起止数值, 暂定为int
      */
@@ -73,7 +73,6 @@ public class RulerView extends View {
      * 长线间隔宽度
      */
     private float mPartitionWidth;
-
     /**
      * 设置的初始值
      */
@@ -83,8 +82,6 @@ public class RulerView extends View {
      * 当前值
      */
     private int mCurrentValue;
-
-
     /**
      * 刻度的大小
      */
@@ -94,18 +91,20 @@ public class RulerView extends View {
      */
     protected int mMinVelocity;
 
-    private float mWidth, mHeight;
-
-
     private Paint mBgPaint;
     private Paint mShortLinePaint;
     private Paint mHighLinePaint;
     private Paint mIndicatorTxtPaint;
     private Paint mIndicatorViewPaint;
 
-
+    //往右边去能偏移的最大值
     private float mRightOffset;
+    //往左边去能偏移的最大值
     private float mLeftOffset;
+    //移动的距离
+    private float mMoveX = 0f;
+
+    private float mWidth, mHeight;
 
     private Scroller mScroller;
     protected VelocityTracker mVelocityTracker;
@@ -200,59 +199,58 @@ public class RulerView extends View {
         mHeight = getMeasuredHeight();
     }
 
+    /**
+     * 画背景
+     * @param canvas
+     */
     private void drawBackground(Canvas canvas) {
         canvas.drawRect(0, 0, mWidth, mHeight, mBgPaint);
     }
 
+    /**
+     * 画指示器
+     * @param canvas
+     */
     private void drawIndicator(Canvas canvas) {
         Path path = new Path();
         path.moveTo(mWidth / 2 - mIndicatorHalfWidth, 0);
         path.lineTo(mWidth / 2, mIndicatorHalfWidth);
         path.lineTo(mWidth / 2 + mIndicatorHalfWidth, 0);
-
         canvas.drawPath(path, mIndicatorViewPaint);
     }
 
-
-    private float mMoveX = 0f;
     private float mOffset = 0f;
 
-    //TODO 这个需要在mPartitionWidth和mSmallPartitionCount设置好之后才能用
-    public void setOriginValueSmall(int small) {
-        this.mOriginValueSmall = small;
-        mMoveX = -mOriginValueSmall * (mPartitionWidth / mSmallPartitionCount);
-        invalidate();
-    }
-
     private void drawLinePartition(Canvas canvas) {
+        //计算半个屏幕能有多少个partition
         int halfCount = (int) (mWidth / 2 / mPartitionWidth);
-
+        //根据偏移量计算当前应该指向什么值
         mCurrentValue = mOriginValue - (int) (mMoveX / mPartitionWidth) * mPartitionValue;
+        //相对偏移量是多少, 相对偏移量就是假设不加入数字来指示位置， 范围是0 ~ mPartitionWidth的偏移量
         mOffset = mMoveX - (int) (mMoveX / mPartitionWidth) * mPartitionWidth;
-
 
         if (null != listener) {
             listener.onValueChange(mCurrentValue, -(int) (mOffset / (mPartitionWidth / mSmallPartitionCount)));
         }
 
-        // draw high line and short line
+        // draw high line and  short line
         for (int i = -halfCount - 1; i <= halfCount + 1; i++) {
             int val = mCurrentValue + i * mPartitionValue;
+            //只绘出范围内的图形
             if (val >= mStartValue && val <= mEndValue) {
-                //draw high line
+                //画长的刻度
                 float startx = mWidth / 2 + mOffset + i * mPartitionWidth;
                 if (startx > 0 && startx < mWidth) {
                     canvas.drawLine(mWidth / 2 + mOffset + i * mPartitionWidth, 0 + mLineTopMargin,
                             mWidth / 2 + mOffset + i * mPartitionWidth, 0 + mLineTopMargin + mHighLineHeight, mHighLinePaint);
 
-                    //draw scale
+                    //画刻度值
                     canvas.drawText(val + "", mWidth / 2 + mOffset + i * mPartitionWidth - mIndicatorTxtPaint.measureText(val + "") / 2,
                             0 + mLineTopMargin + mHighLineHeight + mIndicatorTextTopMargin + Utils.calcTextHeight(mIndicatorTxtPaint, val + ""), mIndicatorTxtPaint);
                 }
 
-                //draw short line
+                //画短的刻度
                 if (val != mEndValue) {
-
                     for (int j = 1; j < mSmallPartitionCount; j++) {
                         float start_x = mWidth / 2 + mOffset + i * mPartitionWidth + j * mPartitionWidth / mSmallPartitionCount;
                         if (start_x > 0 && start_x < mWidth) {
@@ -283,16 +281,13 @@ public class RulerView extends View {
         switch (action) {
             case MotionEvent.ACTION_DOWN:
                 isActionUp = false;
-                Log.d("ACTION_", "actiondown...");
                 mScroller.forceFinished(true);
-                if(null != animator) {
-                    Log.d("MMM", "pause anim");
+                if (null != animator) {
                     animator.cancel();
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
                 isActionUp = false;
-                Log.d("ACTION_", "actionmove...");
                 float off = xPosition - mLastX;
 
                 if ((mMoveX <= mRightOffset) && off < 0 || (mMoveX >= mLeftOffset) && off > 0) {
@@ -305,7 +300,6 @@ public class RulerView extends View {
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                Log.d("ACTION_", "actionup...");
                 isActionUp = true;
                 f = true;
                 countVelocityTracker(event);
@@ -321,9 +315,9 @@ public class RulerView extends View {
     private ValueAnimator animator;
 
     private boolean isCancel = false;
+
     private void startAnim() {
         isCancel = false;
-        Log.d("ANIM", "start anim...");
         float smallWidth = mPartitionWidth / mSmallPartitionCount;
         float neededMoveX;
         if (mMoveX < 0) {
@@ -331,15 +325,12 @@ public class RulerView extends View {
         } else {
             neededMoveX = (int) (mMoveX / smallWidth + 0.5f) * smallWidth;
         }
-        float offset = neededMoveX - mMoveX;
-        Log.d(TAG, "mMoveX: " + mMoveX + " needMoveX " + neededMoveX);
         animator = new ValueAnimator().ofFloat(mMoveX, neededMoveX);
         animator.setDuration(1000);
         animator.setInterpolator(new DecelerateInterpolator());
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                Log.d("MMM", "anim....");
                 if (!isCancel) {
                     mMoveX = (float) animation.getAnimatedValue();
                     postInvalidate();
@@ -359,7 +350,6 @@ public class RulerView extends View {
 
             @Override
             public void onAnimationCancel(Animator animation) {
-                Log.d("MMM", "receive status cancel");
                 isCancel = true;
             }
 
@@ -376,12 +366,9 @@ public class RulerView extends View {
     @Override
     public void computeScroll() {
         super.computeScroll();
-        Log.d("ACTION_", "computerscroll...");
-
         if (mScroller.computeScrollOffset()) {
             float off = mScroller.getFinalX() - mScroller.getCurrX();
             off = off * functionSpeed();
-            Log.d(TAG, "computeScroll.................... " + " final " + mScroller.getFinalX() + " start " + mScroller.getCurrX());
             if ((mMoveX <= mRightOffset) && off < 0) {
                 mMoveX = mRightOffset;
             } else if ((mMoveX >= mLeftOffset) && off > 0) {
@@ -389,37 +376,28 @@ public class RulerView extends View {
             } else {
                 mMoveX += off;
                 if (mScroller.isFinished()) {
-                    Log.d("MMM", "here isFinished start anim");
                     startAnim();
                 } else {
                     postInvalidate();
                     mLastX = mScroller.getFinalX();
                 }
-                Log.d(TAG, "mMoveX here " + mMoveX + " off " + off + " isFinished " + mScroller.isFinished());
-
-
             }
 
         } else {
             if (isActionUp && f) {
-                Log.d("MMM", "here computerscroll start anim");
                 startAnim();
                 f = false;
 
             }
-            Log.d("ACTION_", "isActionUp " + isActionUp);
         }
     }
 
     /**
-     * TODO change animation
+     * 控制滑动速度
      *
      * @return
      */
     private float functionSpeed() {
-//        float afterOff = (float)Math.sin(off/mWidth * Math.PI / 2);
-//        Log.d("OFF", off + " " + afterOff + "");
-//        return (float)Math.sin(off/580 * Math.PI / 2);
         return 0.2f;
     }
 
@@ -427,57 +405,35 @@ public class RulerView extends View {
         mVelocityTracker.computeCurrentVelocity(1000, 3000);
         float xVelocity = mVelocityTracker.getXVelocity();
         if (Math.abs(xVelocity) > mMinVelocity) {
-            Log.d("VLC", ">.....");
             mScroller.fling(0, 0, (int) xVelocity, 0, Integer.MIN_VALUE,
                     Integer.MAX_VALUE, 0, 0);
         } else {
-            Log.d("VLC", "<=.....");
+
         }
     }
 
-    public int getmStartValue() {
-        return mStartValue;
-    }
-
-    public void setmStartValue(int mStartValue) {
+    public void setStartValue(int mStartValue) {
         this.mStartValue = mStartValue;
-        calculatorOffsetRange();
+        recaculate();
         invalidate();
     }
 
-    public int getmEndValue() {
-        return mEndValue;
-    }
-
-    public void setmEndValue(int mEndValue) {
+    public void setEndValue(int mEndValue) {
         this.mEndValue = mEndValue;
-        calculatorOffsetRange();
+        recaculate();
         invalidate();
     }
 
-    public int getmPartitionValue() {
-        return mPartitionValue;
-    }
-
-    public void setmPartitionValue(int mPartitionValue) {
+    public void setPartitionValue(int mPartitionValue) {
         this.mPartitionValue = mPartitionValue;
-        calculatorOffsetRange();
+        recaculate();
         invalidate();
     }
 
-    public float getmPartitionWidth() {
-        return mPartitionWidth;
-    }
-
-    public void setmPartitionWidthInDP(float mPartitionWidth) {
+    public void setPartitionWidthInDP(float mPartitionWidth) {
         this.mPartitionWidth = Utils.convertDpToPixel(mContext, mPartitionWidth);
-        recalculat();
-        calculatorOffsetRange();
+        recaculate();
         invalidate();
-    }
-
-    public int getmValue() {
-        return mCurrentValue;
     }
 
     public void setmValue(int mValue) {
@@ -485,34 +441,28 @@ public class RulerView extends View {
         invalidate();
     }
 
-    public int getmSmallPartitionCount() {
-        return mSmallPartitionCount;
-    }
-
-    public void setmSmallPartitionCount(int mSmallPartitionCount) {
+    public void setSmallPartitionCount(int mSmallPartitionCount) {
         this.mSmallPartitionCount = mSmallPartitionCount;
-        recalculat();
+        recaculate();
         invalidate();
     }
 
-    public int getmOriginValue() {
-        return mOriginValue;
-    }
-
-    public void setmOriginValue(int mOriginValue) {
+    public void setOriginValue(int mOriginValue) {
         this.mOriginValue = mOriginValue;
-        calculatorOffsetRange();
+        recaculate();
         invalidate();
     }
 
-    private void calculatorOffsetRange() {
+    public void setOriginValueSmall(int small) {
+        this.mOriginValueSmall = small;
+        recaculate();
+        invalidate();
+    }
+
+    private void recaculate() {
+        mMoveX = -mOriginValueSmall * (mPartitionWidth / mSmallPartitionCount);
         mRightOffset = -1 * (mEndValue - mOriginValue) * mPartitionWidth / mPartitionValue;
         mLeftOffset = -1 * (mStartValue - mOriginValue) * mPartitionWidth / mPartitionValue;
-    }
-
-    private void recalculat() {
-        mMoveX = -mOriginValueSmall * (mPartitionWidth / mSmallPartitionCount);
-        invalidate();
     }
 }
 
